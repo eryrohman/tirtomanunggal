@@ -3,153 +3,190 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistem Tagihan Air Sawah</title>
-  <link rel="manifest" href="data:application/manifest+json,{
-    \"name\": \"Tagihan Air Sawah\",
-    \"short_name\": \"AirSawah\",
-    \"start_url\": \".\",
-    \"display\": \"standalone\",
-    \"background_color\": \"#ffffff\",
-    \"theme_color\": \"#0284c7\"
-  }">
+  <title>Tagihan Air Sawah - kWh Meter</title>
+  <link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIlRhZ2loYW4gQWlyIFNhd2FoIiwKICAic2hvcnRfbmFtZSI6ICJBaXJTYXdhaCIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZjNmNGY2IiwKICAidGhlbWVfY29sb3IiOiAiIzI1NjNhIi农业CgN9">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-100 font-sans text-slate-800">
+<body class="bg-slate-100 font-sans min-h-screen">
 
-  <!-- NAVBAR -->
-  <nav class="bg-sky-700 text-white p-4 shadow-md flex justify-between items-center">
-    <h1 class="font-bold text-lg">🌾 Air Sawah Digital</h1>
-    <button id="btnLogout" onclick="logout()" class="hidden bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-sm">Logout</button>
-  </nav>
-
-  <!-- CONTAINER MAIN -->
-  <div class="max-w-4xl mx-auto p-4">
-
-    <!-- FORM LOGIN -->
-    <div id="viewLogin" class="bg-white p-6 rounded-xl shadow-md max-w-sm mx-auto mt-10">
-      <h2 class="text-xl font-bold mb-4 text-center text-sky-800">Login Admin</h2>
-      <form onsubmit="handleLogin(event)" class="space-y-4">
+  <!-- LOGIN CONTAINER -->
+  <div id="loginSection" class="flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white p-6 rounded-xl shadow-md w-full max-w-sm">
+      <h2 class="text-2xl font-bold text-center text-blue-600 mb-6">Login Admin Air Sawah</h2>
+      <form id="formLogin" onsubmit="handleLogin(event)" class="space-y-4">
         <div>
-          <label class="block text-sm font-medium">Username</label>
-          <input type="text" id="loginUser" required class="w-full border p-2 rounded mt-1">
+          <label class="block text-sm font-medium text-gray-700">Username</label>
+          <input type="text" id="loginUser" required class="w-full border rounded-lg p-2.5 mt-1 focus:ring-2 focus:ring-blue-500">
         </div>
         <div>
-          <label class="block text-sm font-medium">Password</label>
-          <input type="password" id="loginPass" required class="w-full border p-2 rounded mt-1">
+          <label class="block text-sm font-medium text-gray-700">Password</label>
+          <input type="password" id="loginPass" required class="w-full border rounded-lg p-2.5 mt-1 focus:ring-2 focus:ring-blue-500">
         </div>
-        <button type="submit" class="w-full bg-sky-600 text-white py-2 rounded hover:bg-sky-700 font-semibold">Masuk</button>
+        <button type="submit" id="btnLogin" class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition">Masuk</button>
       </form>
     </div>
+  </div>
 
-    <!-- DASHBOARD UTAMA -->
-    <div id="viewDashboard" class="hidden space-y-6">
+  <!-- MAIN APP CONTAINER -->
+  <div id="appSection" class="hidden min-h-screen flex flex-col">
+    <!-- NAVBAR -->
+    <nav class="bg-blue-600 text-white shadow-md p-4 flex justify-between items-center sticky top-0 z-10">
+      <h1 class="font-bold text-lg">Tagihan Air Sawah</h1>
+      <button onclick="logout()" class="text-xs bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-lg">Keluar</button>
+    </nav>
+
+    <!-- CONTENT BODY -->
+    <div class="p-4 max-w-4xl mx-auto w-full flex-grow">
       
-      <!-- MENU TAB -->
-      <div class="flex space-x-2 border-b border-slate-300 pb-2 overflow-x-auto">
-        <button onclick="switchTab('tagihan')" class="tab-btn bg-sky-600 text-white px-4 py-2 rounded-lg text-sm font-medium">Catat & Tagihan</button>
-        <button onclick="switchTab('pengguna')" class="tab-btn bg-slate-200 px-4 py-2 rounded-lg text-sm font-medium">Data Petani</button>
-        <button onclick="switchTab('kas')" class="tab-btn bg-slate-200 px-4 py-2 rounded-lg text-sm font-medium">Laporan Keuangan</button>
+      <!-- NAVIGATION TABS -->
+      <div class="flex border-b border-gray-300 mb-6 bg-white rounded-t-lg overflow-x-auto">
+        <button onclick="switchTab('tagihan')" id="tabTagihan" class="tab-btn px-4 py-3 font-medium text-blue-600 border-b-2 border-blue-600">Catat Meter & Tagihan</button>
+        <button onclick="switchTab('pelanggan')" id="tabPelanggan" class="tab-btn px-4 py-3 font-medium text-gray-500">Data Pengguna</button>
+        <button onclick="switchTab('keuangan')" id="tabKeuangan" class="tab-btn px-4 py-3 font-medium text-gray-500">Laporan Keuangan</button>
       </div>
 
-      <!-- TAB 1: TAGIHAN & METERAN -->
-      <div id="tabTagihan" class="space-y-6">
-        <!-- FORM CATAT METERAN -->
-        <div class="bg-white p-5 rounded-xl shadow">
-          <h3 class="font-bold text-lg mb-3 text-sky-800">Catat Penggunaan Meteran</h3>
-          <form onsubmit="handleSaveMeteran(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- TAB: CATAT METER & TAGIHAN -->
+      <div id="secTagihan" class="space-y-6">
+        <div class="bg-white p-5 rounded-xl shadow-sm border">
+          <h3 class="font-bold text-lg mb-4 text-gray-800">Input Usage kWh Meter</h3>
+          <form id="formTagihan" onsubmit="saveTagihan(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-semibold uppercase text-slate-500">Pilih Petani / Pengguna</label>
-              <select id="selectPengguna" required class="w-full border p-2 rounded mt-1 bg-white"></select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold uppercase text-slate-500">Tanggal Record</label>
-              <input type="date" id="inputTanggal" required class="w-full border p-2 rounded mt-1">
+              <label class="block text-sm font-medium text-gray-700">Pilih Pengguna</label>
+              <select id="selectPelanggan" required class="w-full border rounded-lg p-2.5 mt-1 bg-white"></select>
             </div>
             <div>
-              <label class="block text-xs font-semibold uppercase text-slate-500">kWh Awal (Angka Besar)</label>
-              <input type="number" step="any" id="kwhAwal" required oninput="hitungTagihan()" class="w-full border p-2 rounded mt-1">
+              <label class="block text-sm font-medium text-gray-700">Status Pembayaran</label>
+              <select id="statusBayar" onchange="toggleCicilanInput()" class="w-full border rounded-lg p-2.5 mt-1 bg-white">
+                <option value="Belum Lunas">Belum Lunas</option>
+                <option value="Lunas">Lunas</option>
+                <option value="Dicicil">Dicicil</option>
+              </select>
             </div>
             <div>
-              <label class="block text-xs font-semibold uppercase text-slate-500">kWh Akhir (Angka Kecil)</label>
-              <input type="number" step="any" id="kwhAkhir" required oninput="hitungTagihan()" class="w-full border p-2 rounded mt-1">
-            </div>
-            <div class="md:col-span-2 bg-slate-50 p-3 rounded-lg border grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-              <div>Total kWh: <b id="textTotalKwh">0</b></div>
-              <div>Tarif/kWh: <b id="textTarif">Rp 0</b></div>
-              <div>Total Tagihan: <b id="textTotalTagihan" class="text-sky-700">Rp 0</b></div>
-              <div>Status: <span id="textStatusAuto" class="font-bold text-amber-600">Belum Bayar</span></div>
+              <label class="block text-sm font-medium text-gray-700">Angka Meter Awal (kWh)</label>
+              <input type="number" step="0.1" id="meterAwal" required class="w-full border rounded-lg p-2.5 mt-1">
             </div>
             <div>
-              <label class="block text-xs font-semibold uppercase text-slate-500">Jumlah Bayar (Awal/Cicil)</label>
-              <input type="number" id="inputBayar" value="0" oninput="hitungTagihan()" class="w-full border p-2 rounded mt-1">
+              <label class="block text-sm font-medium text-gray-700">Angka Meter Akhir (kWh)</label>
+              <input type="number" step="0.1" id="meterAkhir" required class="w-full border rounded-lg p-2.5 mt-1">
             </div>
-            <div class="flex items-end">
-              <button type="submit" class="w-full bg-emerald-600 text-white py-2 rounded font-semibold hover:bg-emerald-700">Simpan Tagihan</button>
+            <div id="boxCicilan" class="hidden">
+              <label class="block text-sm font-medium text-gray-700">Sisa Tagihan (Rp)</label>
+              <input type="number" id="sisaBayar" class="w-full border rounded-lg p-2.5 mt-1">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Catatan/Keterangan</label>
+              <input type="text" id="catatanTagihan" placeholder="Opsional" class="w-full border rounded-lg p-2.5 mt-1">
+            </div>
+            <div class="md:col-span-2">
+              <button type="submit" class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700">Simpan Tagihan</button>
             </div>
           </form>
         </div>
 
-        <!-- DAFTAR TAGIHAN & PEMBAYARAN -->
-        <div class="bg-white p-5 rounded-xl shadow overflow-x-auto">
-          <h3 class="font-bold text-lg mb-3 text-sky-800">Daftar Tagihan & Piutang</h3>
-          <table class="w-full text-left text-sm border-collapse">
-            <thead>
-              <tr class="bg-slate-100 border-b">
-                <th class="p-2">Tanggal</th>
-                <th class="p-2">Nama</th>
-                <th class="p-2">Penggunaan</th>
-                <th class="p-2">Tagihan</th>
-                <th class="p-2">Dibayar</th>
-                <th class="p-2">Sisa</th>
-                <th class="p-2">Status</th>
-                <th class="p-2">Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="tableMeteranBody"></tbody>
-          </table>
+        <div class="bg-white p-5 rounded-xl shadow-sm border">
+          <h3 class="font-bold text-lg mb-4 text-gray-800">Daftar Tagihan Pelanggan</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr class="bg-gray-50 border-b">
+                  <th class="p-3">Tanggal</th>
+                  <th class="p-3">Nama</th>
+                  <th class="p-3">Pemakaian</th>
+                  <th class="p-3">Total Tagihan</th>
+                  <th class="p-3">Status</th>
+                  <th class="p-3">Sisa</th>
+                  <th class="p-3">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="tblTagihan" class="divide-y"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <!-- TAB 2: MANAJEMEN PENGGUNA -->
-      <div id="tabPengguna" class="hidden space-y-6">
-        <div class="bg-white p-5 rounded-xl shadow">
-          <h3 class="font-bold text-lg mb-3 text-sky-800">Tambah Data Petani / Lahan</h3>
-          <form onsubmit="handleSavePengguna(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <input type="text" id="namaPengguna" placeholder="Nama Petani" required class="border p-2 rounded">
-            <input type="text" id="alamatPengguna" placeholder="Alamat / Dusun" required class="border p-2 rounded">
-            <input type="text" id="blokPengguna" placeholder="Blok Sawah (misal: Blok A3)" required class="border p-2 rounded">
-            <button type="submit" class="md:col-span-3 bg-sky-600 text-white py-2 rounded font-semibold hover:bg-sky-700">Tambah Pengguna</button>
+      <!-- TAB: DATA PELANGGAN -->
+      <div id="secPelanggan" class="hidden space-y-6">
+        <div class="bg-white p-5 rounded-xl shadow-sm border">
+          <h3 class="font-bold text-lg mb-4 text-gray-800">Tambah Pengguna & Blok Sawah</h3>
+          <form onsubmit="savePelanggan(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Nama Petani</label>
+              <input type="text" id="namaPelanggan" required class="w-full border rounded-lg p-2.5 mt-1">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Alamat</label>
+              <input type="text" id="alamatPelanggan" required class="w-full border rounded-lg p-2.5 mt-1">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Blok Sawah</label>
+              <input type="text" id="blokSawah" required placeholder="Contoh: Blok A / Barat" class="w-full border rounded-lg p-2.5 mt-1">
+            </div>
+            <div class="md:col-span-3">
+              <button type="submit" class="w-full bg-green-600 text-white py-2.5 rounded-lg font-semibold hover:bg-green-700">Tambah Pengguna</button>
+            </div>
           </form>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl shadow-sm border">
+          <h3 class="font-bold text-lg mb-4 text-gray-800">Daftar Pengguna Sawah</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr class="bg-gray-50 border-b">
+                  <th class="p-3">ID</th>
+                  <th class="p-3">Nama</th>
+                  <th class="p-3">Alamat</th>
+                  <th class="p-3">Blok Sawah</th>
+                </tr>
+              </thead>
+              <tbody id="tblPelanggan" class="divide-y"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <!-- TAB 3: KAS & KE UANG AN -->
-      <div id="tabKas" class="hidden space-y-6">
-        <div class="bg-white p-5 rounded-xl shadow">
-          <h3 class="font-bold text-lg mb-3 text-sky-800">Pencatatan Kas Keluar / Masuk</h3>
-          <form onsubmit="handleSaveKas(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <select id="jenisKas" class="border p-2 rounded bg-white">
-              <option value="Masuk">Kas Masuk</option>
-              <option value="Keluar">Kas Keluar</option>
-            </select>
-            <input type="number" id="jumlahKas" placeholder="Nominal Rp" required class="border p-2 rounded">
-            <input type="text" id="ketKas" placeholder="Keterangan Pengeluaran/Pemasukan" required class="border p-2 rounded">
-            <button type="submit" class="bg-emerald-600 text-white py-2 rounded font-semibold hover:bg-emerald-700">Simpan Kas</button>
+      <!-- TAB: LAPORAN KEUANGAN -->
+      <div id="secKeuangan" class="hidden space-y-6">
+        <div class="bg-white p-5 rounded-xl shadow-sm border">
+          <h3 class="font-bold text-lg mb-4 text-gray-800">Catat Kas Masuk / Keluar</h3>
+          <form onsubmit="saveKeuangan(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Jenis Transaksi</label>
+              <select id="tipeKas" class="w-full border rounded-lg p-2.5 mt-1 bg-white">
+                <option value="Masuk">Kas Masuk (Pemasukan)</option>
+                <option value="Keluar">Kas Keluar (Pengeluaran Operasional)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Jumlah (Rp)</label>
+              <input type="number" id="jumlahKas" required class="w-full border rounded-lg p-2.5 mt-1">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Keterangan</label>
+              <input type="text" id="ketKas" required placeholder="Pembelian Token / Perbaikan Pompa" class="w-full border rounded-lg p-2.5 mt-1">
+            </div>
+            <div class="md:col-span-3">
+              <button type="submit" class="w-full bg-indigo-600 text-white py-2.5 rounded-lg font-semibold hover:bg-indigo-700">Simpan Transaksi Kas</button>
+            </div>
           </form>
         </div>
-        <div class="bg-white p-5 rounded-xl shadow overflow-x-auto">
-          <h3 class="font-bold text-lg mb-3 text-sky-800">Riwayat Kas</h3>
-          <table class="w-full text-left text-sm border-collapse">
-            <thead>
-              <tr class="bg-slate-100 border-b">
-                <th class="p-2">Tanggal</th>
-                <th class="p-2">Jenis</th>
-                <th class="p-2">Nominal</th>
-                <th class="p-2">Keterangan</th>
-              </tr>
-            </thead>
-            <tbody id="tableKasBody"></tbody>
-          </table>
+
+        <div class="bg-white p-5 rounded-xl shadow-sm border">
+          <h3 class="font-bold text-lg mb-4 text-gray-800">Buku Kas Operasional</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr class="bg-gray-50 border-b">
+                  <th class="p-3">Tanggal</th>
+                  <th class="p-3">Tipe</th>
+                  <th class="p-3">Jumlah</th>
+                  <th class="p-3">Keterangan</th>
+                </tr>
+              </thead>
+              <tbody id="tblKeuangan" class="divide-y"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -157,204 +194,197 @@
   </div>
 
   <script>
-    // MASUKKAN URL DEPLOYMENT APPS SCRIPT ANDA DI SINI
-    const API_URL = "URL_WEB_APP_APPS_SCRIPT_ANDA_DI_SINI";
+    // MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
+    const API_URL = "GANTI_DENGAN_URL_DEPLOYMENT_GOOGLE_APPS_SCRIPT_ANDA";
 
-    let state = { pengguna: [], meteran: [], kas: [], tarif: 0 };
+    let state = { pelanggan: [], tagihan: [], keuangan: [], tarif: 0 };
 
-    document.addEventListener("DOMContentLoaded", () => {
-      document.getElementById("inputTanggal").valueAsDate = new Date();
-      if (localStorage.getItem("admin_token")) showDashboard();
-    });
+    function toggleCicilanInput() {
+      const status = document.getElementById('statusBayar').value;
+      document.getElementById('boxCicilan').classList.toggle('hidden', status !== 'Dicicil');
+    }
 
     async function handleLogin(e) {
       e.preventDefault();
-      const res = await fetch(API_URL, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "login",
-          username: document.getElementById("loginUser").value,
-          password: document.getElementById("loginPass").value
-        })
-      }).then(r => r.json());
+      const btn = document.getElementById('btnLogin');
+      btn.innerText = "Memproses...";
+      btn.disabled = true;
 
-      if (res.success) {
-        localStorage.setItem("admin_token", res.token);
-        showDashboard();
-      } else {
-        alert(res.message);
+      const user = document.getElementById('loginUser').value;
+      const pass = document.getElementById('loginPass').value;
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'login', username: user, password: pass })
+        });
+        const json = await res.json();
+        
+        if (json.success) {
+          document.getElementById('loginSection').classList.add('hidden');
+          document.getElementById('appSection').classList.remove('hidden');
+          loadInitialData();
+        } else {
+          alert('Username atau Password Salah!');
+        }
+      } catch(err) {
+        alert('Gagal terhubung ke server.');
+      } finally {
+        btn.innerText = "Masuk";
+        btn.disabled = false;
       }
     }
 
     function logout() {
-      localStorage.removeItem("admin_token");
       location.reload();
     }
 
-    async function showDashboard() {
-      document.getElementById("viewLogin").classList.add("hidden");
-      document.getElementById("viewDashboard").classList.remove("hidden");
-      document.getElementById("btnLogout").classList.remove("hidden");
-      await loadData();
-    }
-
-    async function loadData() {
-      const res = await fetch(`${API_URL}?action=getInitialData`).then(r => r.json());
-      state = res;
-      renderDropdownPengguna();
-      renderTableMeteran();
-      renderTableKas();
-    }
-
-    function renderDropdownPengguna() {
-      const select = document.getElementById("selectPengguna");
-      select.innerHTML = '<option value="">-- Pilih Petani --</option>' + 
-        state.pengguna.map(p => `<option value="${p.id}">${p.nama} - ${p.blok} (${p.alamat})</option>`).join("");
-    }
-
-    function hitungTagihan() {
-      const awal = parseFloat(document.getElementById("kwhAwal").value) || 0;
-      const akhir = parseFloat(document.getElementById("kwhAkhir").value) || 0;
-      const bayar = parseFloat(document.getElementById("inputBayar").value) || 0;
-      
-      const totalKwh = Math.max(0, awal - akhir); // Nilai awal (besar) - nilai akhir (kecil)
-      const totalTagihan = totalKwh * state.tarif;
-      const sisa = totalTagihan - bayar;
-
-      let status = "Belum Bayar";
-      if (bayar >= totalTagihan && totalTagihan > 0) status = "Lunas";
-      else if (bayar > 0 && bayar < totalTagihan) status = "Cicil";
-
-      document.getElementById("textTotalKwh").innerText = totalKwh.toFixed(2);
-      document.getElementById("textTarif").innerText = `Rp ${state.tarif.toLocaleString()}`;
-      document.getElementById("textTotalTagihan").innerText = `Rp ${totalTagihan.toLocaleString()}`;
-      document.getElementById("textStatusAuto").innerText = status;
-    }
-
-    async function handleSaveMeteran(e) {
-      e.preventDefault();
-      const awal = parseFloat(document.getElementById("kwhAwal").value);
-      const akhir = parseFloat(document.getElementById("kwhAkhir").value);
-      const bayar = parseFloat(document.getElementById("inputBayar").value) || 0;
-      const totalKwh = awal - akhir;
-      const totalTagihan = totalKwh * state.tarif;
-      const sisa = totalTagihan - bayar;
-
-      let status = "Belum Bayar";
-      if (bayar >= totalTagihan) status = "Lunas";
-      else if (bayar > 0) status = "Cicil";
-
-      const payload = {
-        action: "addMeteran",
-        tanggal: document.getElementById("inputTanggal").value,
-        id_pengguna: document.getElementById("selectPengguna").value,
-        kwh_awal: awal,
-        kwh_akhir: akhir,
-        total_kwh: totalKwh,
-        total_tagihan: totalTagihan,
-        bayar: bayar,
-        sisa: sisa,
-        status: status
-      };
-
-      await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
-      alert("Tagihan Berhasil Disimpan!");
-      loadData();
-    }
-
-    function renderTableMeteran() {
-      const tbody = document.getElementById("tableMeteranBody");
-      tbody.innerHTML = state.meteran.map(m => {
-        const p = state.pengguna.find(x => x.id === m.id_pengguna) || {};
-        const badgeColor = m.status === 'Lunas' ? 'bg-emerald-100 text-emerald-700' : (m.status === 'Cicil' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700');
-        
-        return `<tr class="border-b">
-          <td class="p-2">${m.tanggal}</td>
-          <td class="p-2"><b>${p.nama || '-'}</b><br><span class="text-xs text-slate-500">${p.blok || ''}</span></td>
-          <td class="p-2">${m.total_kwh} kWh</td>
-          <td class="p-2">Rp ${Number(m.total_tagihan).toLocaleString()}</td>
-          <td class="p-2">Rp ${Number(m.bayar).toLocaleString()}</td>
-          <td class="p-2 text-red-600 font-semibold">Rp ${Number(m.sisa).toLocaleString()}</td>
-          <td class="p-2"><span class="px-2 py-1 rounded-full text-xs font-bold ${badgeColor}">${m.status}</span></td>
-          <td class="p-2"><button onclick="bayarUlang('${m.id}', ${m.total_tagihan}, ${m.bayar})" class="text-xs bg-sky-600 text-white px-2 py-1 rounded">Update Bayar</button></td>
-        </tr>`;
-      }).join("");
-    }
-
-    async function bayarUlang(id, tagihan, bayarLama) {
-      const tambahBayar = prompt(`Masukkan Tambahan Pembayaran (Tagihan: Rp ${tagihan.toLocaleString()}, Sudah Dibayar: Rp ${bayarLama.toLocaleString()}):`);
-      if (tambahBayar !== null) {
-        const totalBayarBaru = bayarLama + parseFloat(tambahBayar || 0);
-        const sisaBaru = tagihan - totalBayarBaru;
-        let statusBaru = "Belum Bayar";
-        if (totalBayarBaru >= tagihan) statusBaru = "Lunas";
-        else if (totalBayarBaru > 0) statusBaru = "Cicil";
-
-        await fetch(API_URL, {
-          method: "POST",
-          body: JSON.stringify({
-            action: "updatePembayaran",
-            id: id,
-            bayar: totalBayarBaru,
-            sisa: sisaBaru,
-            status: statusBaru
-          })
-        });
-        loadData();
-      }
-    }
-
-    async function handleSavePengguna(e) {
-      e.preventDefault();
-      await fetch(API_URL, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "addPengguna",
-          nama: document.getElementById("namaPengguna").value,
-          alamat: document.getElementById("alamatPengguna").value,
-          blok: document.getElementById("blokPengguna").value
-        })
-      });
-      alert("Pengguna Berhasil Ditambahkan!");
-      loadData();
-    }
-
-    async function handleSaveKas(e) {
-      e.preventDefault();
-      await fetch(API_URL, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "addKas",
-          tanggal: new Date().toISOString().split('T')[0],
-          jenis: document.getElementById("jenisKas").value,
-          jumlah: parseFloat(document.getElementById("jumlahKas").value),
-          keterangan: document.getElementById("ketKas").value
-        })
-      });
-      alert("Transaksi Kas Disimpan!");
-      loadData();
-    }
-
-    function renderTableKas() {
-      const tbody = document.getElementById("tableKasBody");
-      tbody.innerHTML = state.kas.map(k => `
-        <tr class="border-b">
-          <td class="p-2">${k.tanggal}</td>
-          <td class="p-2"><span class="font-bold ${k.jenis === 'Masuk' ? 'text-emerald-600' : 'text-red-600'}">${k.jenis}</span></td>
-          <td class="p-2">Rp ${Number(k.jumlah).toLocaleString()}</td>
-          <td class="p-2">${k.keterangan}</td>
-        </tr>
-      `).join("");
-    }
-
     function switchTab(tabName) {
-      document.getElementById("tabTagihan").classList.add("hidden");
-      document.getElementById("tabPengguna").classList.add("hidden");
-      document.getElementById("tabKas").classList.add("hidden");
-      
-      if (tabName === 'tagihan') document.getElementById("tabTagihan").classList.remove("hidden");
-      if (tabName === 'pengguna') document.getElementById("tabPengguna").classList.remove("hidden");
-      if (tabName === 'kas') document.getElementById("tabKas").classList.remove("hidden");
+      ['tagihan', 'pelanggan', 'keuangan'].forEach(t => {
+        const cap = t.charAt(0).toUpperCase() + t.slice(1);
+        document.getElementById(`sec${cap}`).classList.add('hidden');
+        document.getElementById(`tab${cap}`).className = "tab-btn px-4 py-3 font-medium text-gray-500";
+      });
+
+      const activeCap = tabName.charAt(0).toUpperCase() + tabName.slice(1);
+      document.getElementById(`sec${activeCap}`).classList.remove('hidden');
+      document.getElementById(`tab${activeCap}`).className = "tab-btn px-4 py-3 font-medium text-blue-600 border-b-2 border-blue-600";
+    }
+
+    async function loadInitialData() {
+      const res = await fetch(`${API_URL}?action=getInitialData`);
+      state = await res.json();
+      renderDropdownPelanggan();
+      renderPelanggan();
+      renderTagihan();
+      renderKeuangan();
+    }
+
+    function renderDropdownPelanggan() {
+      const sel = document.getElementById('selectPelanggan');
+      sel.innerHTML = state.pelanggan.length === 0 
+        ? '<option value="">-- Belum Ada Data Pengguna --</option>' 
+        : state.pelanggan.map(p => `<option value="${p.ID_Pelanggan}">${p.Nama} - ${p.Blok_Sawah}</option>`).join('');
+    }
+
+    function renderPelanggan() {
+      const tbody = document.getElementById('tblPelanggan');
+      tbody.innerHTML = state.pelanggan.map(p => `
+        <tr>
+          <td class="p-3">${p.ID_Pelanggan}</td>
+          <td class="p-3 font-medium">${p.Nama}</td>
+          <td class="p-3">${p.Alamat}</td>
+          <td class="p-3">${p.Blok_Sawah}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderTagihan() {
+      const tbody = document.getElementById('tblTagihan');
+      tbody.innerHTML = state.tagihan.map(t => {
+        const pel = state.pelanggan.find(p => p.ID_Pelanggan === t.ID_Pelanggan) || { Nama: 'Terhapus' };
+        let badgeColor = 'bg-red-100 text-red-800';
+        if (t.Status === 'Lunas') badgeColor = 'bg-green-100 text-green-800';
+        if (t.Status === 'Dicicil') badgeColor = 'bg-yellow-100 text-yellow-800';
+
+        return `
+          <tr>
+            <td class="p-3">${t.Tanggal}</td>
+            <td class="p-3 font-medium">${pel.Nama}</td>
+            <td class="p-3">${t.Jumlah_kWh} kWh (${t.Meter_Awal} - ${t.Meter_Akhir})</td>
+            <td class="p-3 font-semibold">Rp ${Number(t.Total_Tagihan).toLocaleString()}</td>
+            <td class="p-3"><span class="px-2 py-1 rounded text-xs font-bold ${badgeColor}">${t.Status}</span></td>
+            <td class="p-3">Rp ${Number(t.Sisa_Bayar).toLocaleString()}</td>
+            <td class="p-3">
+              <button onclick="updateStatusDialog('${t.ID_Tagihan}', ${t.Total_Tagihan})" class="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded">Ubah</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderKeuangan() {
+      const tbody = document.getElementById('tblKeuangan');
+      tbody.innerHTML = state.keuangan.map(k => `
+        <tr>
+          <td class="p-3">${k.Tanggal}</td>
+          <td class="p-3 font-bold ${k.Tipe === 'Masuk' ? 'text-green-600' : 'text-red-600'}">${k.Tipe}</td>
+          <td class="p-3 font-semibold">Rp ${Number(k.Jumlah).toLocaleString()}</td>
+          <td class="p-3">${k.Keterangan}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function savePelanggan(e) {
+      e.preventDefault();
+      const payload = {
+        action: 'addPelanggan',
+        nama: document.getElementById('namaPelanggan').value,
+        alamat: document.getElementById('alamatPelanggan').value,
+        blok: document.getElementById('blokSawah').value
+      };
+      await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+      e.target.reset();
+      loadInitialData();
+    }
+
+    async function saveTagihan(e) {
+      e.preventDefault();
+      const payload = {
+        action: 'addTagihan',
+        idPelanggan: document.getElementById('selectPelanggan').value,
+        status: document.getElementById('statusBayar').value,
+        meterAwal: document.getElementById('meterAwal').value,
+        meterAkhir: document.getElementById('meterAkhir').value,
+        sisaBayar: document.getElementById('sisaBayar').value || 0,
+        catatan: document.getElementById('catatanTagihan').value
+      };
+      await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+      e.target.reset();
+      loadInitialData();
+    }
+
+    async function saveKeuangan(e) {
+      e.preventDefault();
+      const payload = {
+        action: 'addKeuangan',
+        tipe: document.getElementById('tipeKas').value,
+        jumlah: document.getElementById('jumlahKas').value,
+        keterangan: document.getElementById('ketKas').value
+      };
+      await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+      e.target.reset();
+      loadInitialData();
+    }
+
+    async function updateStatusDialog(idTagihan, total) {
+      const status = prompt("Masukkan Status (Lunas / Dicicil / Belum Lunas):");
+      if (!status) return;
+      let sisa = 0;
+      if (status.toLowerCase() === 'dicicil') {
+        sisa = prompt("Masukkan sisa yang BELUM dibayar (Rp):");
+      } else if (status.toLowerCase() === 'belum lunas') {
+        sisa = total;
+      }
+
+      await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'updatePembayaran',
+          idTagihan: idTagihan,
+          status: status,
+          sisaBayar: sisa
+        })
+      });
+      loadInitialData();
+    }
+
+    // Registrasi PWA Service Worker sederhana
+    if ('serviceWorker' in navigator) {
+      const swCode = `self.addEventListener('fetch', function(e) {});`;
+      const blob = new Blob([swCode], { type: 'text/javascript' });
+      const url = URL.createObjectURL(blob);
+      navigator.serviceWorker.register(url);
     }
   </script>
 </body>
