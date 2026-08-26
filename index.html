@@ -293,64 +293,76 @@
       `).join('');
     }
 
-        function renderTagihan() {
-      const tbody = document.getElementById('tblTagihan');
-      tbody.innerHTML = state.tagihan.map(t => {
-        const pel = state.pelanggan.find(p => p.ID_Pelanggan === t.ID_Pelanggan) || { Nama: 'Terhapus' };
-        
-        // Pastikan tipe data angka
-        const totalTagihan = Number(t.Total_Tagihan || 0);
-        const sisaBayar = Number(t.Sisa_Bayar || 0);
-        const status = String(t.Status);
+
+    function renderTagihan() {
+  const tbody = document.getElementById('tblTagihan');
+  tbody.innerHTML = state.tagihan.map(t => {
+    const pel = state.pelanggan.find(p => p.ID_Pelanggan === t.ID_Pelanggan) || { Nama: 'Terhapus' };
     
-        let badgeColor = 'bg-red-100 text-red-800';
-        if (status === 'Lunas') badgeColor = 'bg-green-100 text-green-800';
-        if (status === 'Dicicil') badgeColor = 'bg-yellow-100 text-yellow-800';
+    // Konversi nilai dengan fallback aman (jika dari sheet terdeteksi spasi / undefined)
+    const totalTagihan = Number(t.Total_Tagihan || 0);
     
-        return `
-          <tr>
-            <td class="p-3">${t.Tanggal}</td>
-            <td class="p-3 font-medium">${pel.Nama}</td>
-            <td class="p-3">${t.Jumlah_kWh} kWh (${t.Meter_Awal} - ${t.Meter_Akhir})</td>
-            <td class="p-3 font-semibold">Rp ${totalTagihan.toLocaleString()}</td>
-            <td class="p-3"><span class="px-2 py-1 rounded text-xs font-bold ${badgeColor}">${status}</span></td>
-            <td class="p-3 font-semibold ${sisaBayar > 0 ? 'text-red-600' : 'text-green-600'}">Rp ${sisaBayar.toLocaleString()}</td>
-            <td class="p-3">
-              <button onclick="bayarCicilanDialog('${t.ID_Tagihan}', ${sisaBayar}, ${totalTagihan})" class="text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm">
-                ${sisaBayar > 0 ? 'Bayar/Cicil' : 'Edit Bayar'}
-              </button>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
+    // Cek properti Sisa_Bayar atau Sisa Bayar (mencegah perbedaan penulisan header sheet)
+    const rawSisa = t.Sisa_Bayar !== undefined ? t.Sisa_Bayar : (t['Sisa Bayar'] !== undefined ? t['Sisa Bayar'] : t.Sisa);
+    const sisaBayar = Number(rawSisa !== undefined && rawSisa !== '' ? rawSisa : totalTagihan);
     
-    async function bayarCicilanDialog(idTagihan, sisaLama, totalTagihan) {
-      const inputUang = prompt(
-        `Total Tagihan: Rp ${Number(totalTagihan).toLocaleString()}\n` +
-        `Sisa Kekurangan: Rp ${Number(sisaLama).toLocaleString()}\n\n` +
-        `Masukkan nominal pembayaran/cicilan yang diterima saat ini (Rp):`
-      );
+    const status = String(t.Status || 'Belum Lunas');
+
+    let badgeColor = 'bg-red-100 text-red-800';
+    if (status === 'Lunas') badgeColor = 'bg-green-100 text-green-800';
+    if (status === 'Dicicil') badgeColor = 'bg-yellow-100 text-yellow-800';
+
+    return `
+      <tr>
+        <td class="p-3">${t.Tanggal}</td>
+        <td class="p-3 font-medium">${pel.Nama}</td>
+        <td class="p-3">${t.Jumlah_kWh} kWh (${t.Meter_Awal} - ${t.Meter_Akhir})</td>
+        <td class="p-3 font-semibold">Rp ${totalTagihan.toLocaleString('id-ID')}</td>
+        <td class="p-3"><span class="px-2 py-1 rounded text-xs font-bold ${badgeColor}">${status}</span></td>
+        <td class="p-3 font-bold ${sisaBayar > 0 ? 'text-red-600' : 'text-green-600'}">
+          Rp ${sisaBayar.toLocaleString('id-ID')}
+        </td>
+        <td class="p-3">
+          <button onclick="bayarCicilanDialog('${t.ID_Tagihan}', ${sisaBayar}, ${totalTagihan})" class="text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm">
+            ${sisaBayar > 0 ? 'Bayar/Cicil' : 'Edit Bayar'}
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function bayarCicilanDialog(idTagihan, sisaLama, totalTagihan) {
+  const inputUang = prompt(
+    `Total Tagihan: Rp ${Number(totalTagihan).toLocaleString('id-ID')}\n` +
+    `Sisa Kekurangan: Rp ${Number(sisaLama).toLocaleString('id-ID')}\n\n` +
+    `Masukkan nominal uang yang dibayarkan (Rp):`
+  );
+
+  if (inputUang === null || inputUang.trim() === '') return;
+
+  const nominalBayar = Number(inputUang);
+  if (isNaN(nominalBayar) || nominalBayar <= 0) {
+    alert("Nominal pembayaran tidak valid!");
+    return;
+  }
+
+  await fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'updatePembayaran',
+      idTagihan: idTagihan,
+      nominalBayar: nominalBayar
+    })
+  });
+
+  await loadInitialData();
+}
+
+
     
-      if (inputUang === null || inputUang.trim() === '') return;
+
     
-      const nominalBayar = Number(inputUang);
-      if (isNaN(nominalBayar) || nominalBayar <= 0) {
-        alert("Masukkan nominal angka pembayaran yang valid!");
-        return;
-      }
-    
-      await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-          action: 'updatePembayaran',
-          idTagihan: idTagihan,
-          nominalBayar: nominalBayar
-        })
-      });
-    
-      await loadInitialData();
-    }
     function renderKeuangan() {
       const tbody = document.getElementById('tblKeuangan');
       tbody.innerHTML = state.keuangan.map(k => `
