@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Tagihan Air Sawah</title>
+  <link rel="manifest" href="data:application/manifest+json,{
+    \"name\": \"Tagihan Air Sawah\",
+    \"short_name\": \"AirSawah\",
+    \"start_url\": \".\",
+    \"display\": \"standalone\",
+    \"background_color\": \"#ffffff\",
+    \"theme_color\": \"#0284c7\"
+  }">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 font-sans text-slate-800">
+
+  <!-- NAVBAR -->
+  <nav class="bg-sky-700 text-white p-4 shadow-md flex justify-between items-center">
+    <h1 class="font-bold text-lg">🌾 Air Sawah Digital</h1>
+    <button id="btnLogout" onclick="logout()" class="hidden bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-sm">Logout</button>
+  </nav>
+
+  <!-- CONTAINER MAIN -->
+  <div class="max-w-4xl mx-auto p-4">
+
+    <!-- FORM LOGIN -->
+    <div id="viewLogin" class="bg-white p-6 rounded-xl shadow-md max-w-sm mx-auto mt-10">
+      <h2 class="text-xl font-bold mb-4 text-center text-sky-800">Login Admin</h2>
+      <form onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium">Username</label>
+          <input type="text" id="loginUser" required class="w-full border p-2 rounded mt-1">
+        </div>
+        <div>
+          <label class="block text-sm font-medium">Password</label>
+          <input type="password" id="loginPass" required class="w-full border p-2 rounded mt-1">
+        </div>
+        <button type="submit" class="w-full bg-sky-600 text-white py-2 rounded hover:bg-sky-700 font-semibold">Masuk</button>
+      </form>
+    </div>
+
+    <!-- DASHBOARD UTAMA -->
+    <div id="viewDashboard" class="hidden space-y-6">
+      
+      <!-- MENU TAB -->
+      <div class="flex space-x-2 border-b border-slate-300 pb-2 overflow-x-auto">
+        <button onclick="switchTab('tagihan')" class="tab-btn bg-sky-600 text-white px-4 py-2 rounded-lg text-sm font-medium">Catat & Tagihan</button>
+        <button onclick="switchTab('pengguna')" class="tab-btn bg-slate-200 px-4 py-2 rounded-lg text-sm font-medium">Data Petani</button>
+        <button onclick="switchTab('kas')" class="tab-btn bg-slate-200 px-4 py-2 rounded-lg text-sm font-medium">Laporan Keuangan</button>
+      </div>
+
+      <!-- TAB 1: TAGIHAN & METERAN -->
+      <div id="tabTagihan" class="space-y-6">
+        <!-- FORM CATAT METERAN -->
+        <div class="bg-white p-5 rounded-xl shadow">
+          <h3 class="font-bold text-lg mb-3 text-sky-800">Catat Penggunaan Meteran</h3>
+          <form onsubmit="handleSaveMeteran(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold uppercase text-slate-500">Pilih Petani / Pengguna</label>
+              <select id="selectPengguna" required class="w-full border p-2 rounded mt-1 bg-white"></select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase text-slate-500">Tanggal Record</label>
+              <input type="date" id="inputTanggal" required class="w-full border p-2 rounded mt-1">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase text-slate-500">kWh Awal (Angka Besar)</label>
+              <input type="number" step="any" id="kwhAwal" required oninput="hitungTagihan()" class="w-full border p-2 rounded mt-1">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase text-slate-500">kWh Akhir (Angka Kecil)</label>
+              <input type="number" step="any" id="kwhAkhir" required oninput="hitungTagihan()" class="w-full border p-2 rounded mt-1">
+            </div>
+            <div class="md:col-span-2 bg-slate-50 p-3 rounded-lg border grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+              <div>Total kWh: <b id="textTotalKwh">0</b></div>
+              <div>Tarif/kWh: <b id="textTarif">Rp 0</b></div>
+              <div>Total Tagihan: <b id="textTotalTagihan" class="text-sky-700">Rp 0</b></div>
+              <div>Status: <span id="textStatusAuto" class="font-bold text-amber-600">Belum Bayar</span></div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase text-slate-500">Jumlah Bayar (Awal/Cicil)</label>
+              <input type="number" id="inputBayar" value="0" oninput="hitungTagihan()" class="w-full border p-2 rounded mt-1">
+            </div>
+            <div class="flex items-end">
+              <button type="submit" class="w-full bg-emerald-600 text-white py-2 rounded font-semibold hover:bg-emerald-700">Simpan Tagihan</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- DAFTAR TAGIHAN & PEMBAYARAN -->
+        <div class="bg-white p-5 rounded-xl shadow overflow-x-auto">
+          <h3 class="font-bold text-lg mb-3 text-sky-800">Daftar Tagihan & Piutang</h3>
+          <table class="w-full text-left text-sm border-collapse">
+            <thead>
+              <tr class="bg-slate-100 border-b">
+                <th class="p-2">Tanggal</th>
+                <th class="p-2">Nama</th>
+                <th class="p-2">Penggunaan</th>
+                <th class="p-2">Tagihan</th>
+                <th class="p-2">Dibayar</th>
+                <th class="p-2">Sisa</th>
+                <th class="p-2">Status</th>
+                <th class="p-2">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="tableMeteranBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 2: MANAJEMEN PENGGUNA -->
+      <div id="tabPengguna" class="hidden space-y-6">
+        <div class="bg-white p-5 rounded-xl shadow">
+          <h3 class="font-bold text-lg mb-3 text-sky-800">Tambah Data Petani / Lahan</h3>
+          <form onsubmit="handleSavePengguna(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <input type="text" id="namaPengguna" placeholder="Nama Petani" required class="border p-2 rounded">
+            <input type="text" id="alamatPengguna" placeholder="Alamat / Dusun" required class="border p-2 rounded">
+            <input type="text" id="blokPengguna" placeholder="Blok Sawah (misal: Blok A3)" required class="border p-2 rounded">
+            <button type="submit" class="md:col-span-3 bg-sky-600 text-white py-2 rounded font-semibold hover:bg-sky-700">Tambah Pengguna</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- TAB 3: KAS & KE UANG AN -->
+      <div id="tabKas" class="hidden space-y-6">
+        <div class="bg-white p-5 rounded-xl shadow">
+          <h3 class="font-bold text-lg mb-3 text-sky-800">Pencatatan Kas Keluar / Masuk</h3>
+          <form onsubmit="handleSaveKas(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <select id="jenisKas" class="border p-2 rounded bg-white">
+              <option value="Masuk">Kas Masuk</option>
+              <option value="Keluar">Kas Keluar</option>
+            </select>
+            <input type="number" id="jumlahKas" placeholder="Nominal Rp" required class="border p-2 rounded">
+            <input type="text" id="ketKas" placeholder="Keterangan Pengeluaran/Pemasukan" required class="border p-2 rounded">
+            <button type="submit" class="bg-emerald-600 text-white py-2 rounded font-semibold hover:bg-emerald-700">Simpan Kas</button>
+          </form>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow overflow-x-auto">
+          <h3 class="font-bold text-lg mb-3 text-sky-800">Riwayat Kas</h3>
+          <table class="w-full text-left text-sm border-collapse">
+            <thead>
+              <tr class="bg-slate-100 border-b">
+                <th class="p-2">Tanggal</th>
+                <th class="p-2">Jenis</th>
+                <th class="p-2">Nominal</th>
+                <th class="p-2">Keterangan</th>
+              </tr>
+            </thead>
+            <tbody id="tableKasBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // MASUKKAN URL DEPLOYMENT APPS SCRIPT ANDA DI SINI
+    const API_URL = "URL_WEB_APP_APPS_SCRIPT_ANDA_DI_SINI";
+
+    let state = { pengguna: [], meteran: [], kas: [], tarif: 0 };
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("inputTanggal").valueAsDate = new Date();
+      if (localStorage.getItem("admin_token")) showDashboard();
+    });
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "login",
+          username: document.getElementById("loginUser").value,
+          password: document.getElementById("loginPass").value
+        })
+      }).then(r => r.json());
+
+      if (res.success) {
+        localStorage.setItem("admin_token", res.token);
+        showDashboard();
+      } else {
+        alert(res.message);
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem("admin_token");
+      location.reload();
+    }
+
+    async function showDashboard() {
+      document.getElementById("viewLogin").classList.add("hidden");
+      document.getElementById("viewDashboard").classList.remove("hidden");
+      document.getElementById("btnLogout").classList.remove("hidden");
+      await loadData();
+    }
+
+    async function loadData() {
+      const res = await fetch(`${API_URL}?action=getInitialData`).then(r => r.json());
+      state = res;
+      renderDropdownPengguna();
+      renderTableMeteran();
+      renderTableKas();
+    }
+
+    function renderDropdownPengguna() {
+      const select = document.getElementById("selectPengguna");
+      select.innerHTML = '<option value="">-- Pilih Petani --</option>' + 
+        state.pengguna.map(p => `<option value="${p.id}">${p.nama} - ${p.blok} (${p.alamat})</option>`).join("");
+    }
+
+    function hitungTagihan() {
+      const awal = parseFloat(document.getElementById("kwhAwal").value) || 0;
+      const akhir = parseFloat(document.getElementById("kwhAkhir").value) || 0;
+      const bayar = parseFloat(document.getElementById("inputBayar").value) || 0;
+      
+      const totalKwh = Math.max(0, awal - akhir); // Nilai awal (besar) - nilai akhir (kecil)
+      const totalTagihan = totalKwh * state.tarif;
+      const sisa = totalTagihan - bayar;
+
+      let status = "Belum Bayar";
+      if (bayar >= totalTagihan && totalTagihan > 0) status = "Lunas";
+      else if (bayar > 0 && bayar < totalTagihan) status = "Cicil";
+
+      document.getElementById("textTotalKwh").innerText = totalKwh.toFixed(2);
+      document.getElementById("textTarif").innerText = `Rp ${state.tarif.toLocaleString()}`;
+      document.getElementById("textTotalTagihan").innerText = `Rp ${totalTagihan.toLocaleString()}`;
+      document.getElementById("textStatusAuto").innerText = status;
+    }
+
+    async function handleSaveMeteran(e) {
+      e.preventDefault();
+      const awal = parseFloat(document.getElementById("kwhAwal").value);
+      const akhir = parseFloat(document.getElementById("kwhAkhir").value);
+      const bayar = parseFloat(document.getElementById("inputBayar").value) || 0;
+      const totalKwh = awal - akhir;
+      const totalTagihan = totalKwh * state.tarif;
+      const sisa = totalTagihan - bayar;
+
+      let status = "Belum Bayar";
+      if (bayar >= totalTagihan) status = "Lunas";
+      else if (bayar > 0) status = "Cicil";
+
+      const payload = {
+        action: "addMeteran",
+        tanggal: document.getElementById("inputTanggal").value,
+        id_pengguna: document.getElementById("selectPengguna").value,
+        kwh_awal: awal,
+        kwh_akhir: akhir,
+        total_kwh: totalKwh,
+        total_tagihan: totalTagihan,
+        bayar: bayar,
+        sisa: sisa,
+        status: status
+      };
+
+      await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
+      alert("Tagihan Berhasil Disimpan!");
+      loadData();
+    }
+
+    function renderTableMeteran() {
+      const tbody = document.getElementById("tableMeteranBody");
+      tbody.innerHTML = state.meteran.map(m => {
+        const p = state.pengguna.find(x => x.id === m.id_pengguna) || {};
+        const badgeColor = m.status === 'Lunas' ? 'bg-emerald-100 text-emerald-700' : (m.status === 'Cicil' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700');
+        
+        return `<tr class="border-b">
+          <td class="p-2">${m.tanggal}</td>
+          <td class="p-2"><b>${p.nama || '-'}</b><br><span class="text-xs text-slate-500">${p.blok || ''}</span></td>
+          <td class="p-2">${m.total_kwh} kWh</td>
+          <td class="p-2">Rp ${Number(m.total_tagihan).toLocaleString()}</td>
+          <td class="p-2">Rp ${Number(m.bayar).toLocaleString()}</td>
+          <td class="p-2 text-red-600 font-semibold">Rp ${Number(m.sisa).toLocaleString()}</td>
+          <td class="p-2"><span class="px-2 py-1 rounded-full text-xs font-bold ${badgeColor}">${m.status}</span></td>
+          <td class="p-2"><button onclick="bayarUlang('${m.id}', ${m.total_tagihan}, ${m.bayar})" class="text-xs bg-sky-600 text-white px-2 py-1 rounded">Update Bayar</button></td>
+        </tr>`;
+      }).join("");
+    }
+
+    async function bayarUlang(id, tagihan, bayarLama) {
+      const tambahBayar = prompt(`Masukkan Tambahan Pembayaran (Tagihan: Rp ${tagihan.toLocaleString()}, Sudah Dibayar: Rp ${bayarLama.toLocaleString()}):`);
+      if (tambahBayar !== null) {
+        const totalBayarBaru = bayarLama + parseFloat(tambahBayar || 0);
+        const sisaBaru = tagihan - totalBayarBaru;
+        let statusBaru = "Belum Bayar";
+        if (totalBayarBaru >= tagihan) statusBaru = "Lunas";
+        else if (totalBayarBaru > 0) statusBaru = "Cicil";
+
+        await fetch(API_URL, {
+          method: "POST",
+          body: JSON.stringify({
+            action: "updatePembayaran",
+            id: id,
+            bayar: totalBayarBaru,
+            sisa: sisaBaru,
+            status: statusBaru
+          })
+        });
+        loadData();
+      }
+    }
+
+    async function handleSavePengguna(e) {
+      e.preventDefault();
+      await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "addPengguna",
+          nama: document.getElementById("namaPengguna").value,
+          alamat: document.getElementById("alamatPengguna").value,
+          blok: document.getElementById("blokPengguna").value
+        })
+      });
+      alert("Pengguna Berhasil Ditambahkan!");
+      loadData();
+    }
+
+    async function handleSaveKas(e) {
+      e.preventDefault();
+      await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "addKas",
+          tanggal: new Date().toISOString().split('T')[0],
+          jenis: document.getElementById("jenisKas").value,
+          jumlah: parseFloat(document.getElementById("jumlahKas").value),
+          keterangan: document.getElementById("ketKas").value
+        })
+      });
+      alert("Transaksi Kas Disimpan!");
+      loadData();
+    }
+
+    function renderTableKas() {
+      const tbody = document.getElementById("tableKasBody");
+      tbody.innerHTML = state.kas.map(k => `
+        <tr class="border-b">
+          <td class="p-2">${k.tanggal}</td>
+          <td class="p-2"><span class="font-bold ${k.jenis === 'Masuk' ? 'text-emerald-600' : 'text-red-600'}">${k.jenis}</span></td>
+          <td class="p-2">Rp ${Number(k.jumlah).toLocaleString()}</td>
+          <td class="p-2">${k.keterangan}</td>
+        </tr>
+      `).join("");
+    }
+
+    function switchTab(tabName) {
+      document.getElementById("tabTagihan").classList.add("hidden");
+      document.getElementById("tabPengguna").classList.add("hidden");
+      document.getElementById("tabKas").classList.add("hidden");
+      
+      if (tabName === 'tagihan') document.getElementById("tabTagihan").classList.remove("hidden");
+      if (tabName === 'pengguna') document.getElementById("tabPengguna").classList.remove("hidden");
+      if (tabName === 'kas') document.getElementById("tabKas").classList.remove("hidden");
+    }
+  </script>
+</body>
+</html>
